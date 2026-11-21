@@ -2,45 +2,49 @@
 import pin_security
 from datetime import datetime
 import random
-import getpass
 class CreateAccount:
-    def __init__(self):
-        self.cname=input("Enter your Name => ")
-        self.fname=input("Enter your Father Name => ")
-        self.DOB()
-        self.mobile_num()
-        self.address=input("Enter you Address => ")
-        self.customer_id_generation()
-        self.creating_pin()
-        self.account_number()
-        print("=> Your account ID is ", self.account_id)
-        self.account_type='SAVINGS'
-        self.intial_deposite()
-        self.account_status='ACTIVE'
-        self.time()
-        self.account_info()
+    def __init__(self,database_operations):
+        self.database_operations=database_operations
+        self.customer_info()
         
-        
-    
-    
-    def creating_pin(self):
-        print("*" * 41)
-        print(" " * 12, "PIN CREATION")
-        print("*" * 41)
-        pin=getpass.getpass("=> Enter Your PIN :  ")
-        self.coded_pin=pin_security.hash_pin(pin)
-        
-        
-        
+    def customer_info(self):
+                self.cname=input("Enter your Name => ")
+                self.fname=input("Enter your Father Name => ")
+                self.DOB()
+                self.mobile_num()
+                self.address=input("Enter you Address => ")
+                self.customer_id_generation()
+        #        self.customer_id='C4824'
+                self.account_number()
+        #        self.account_id='6602261426'
+        #        self.data=database_operations.validating_customer(self.customer_id)
+                self.validate()
+                print("=> Your account ID is ", self.account_id)
+                self.coded_pin=pin_security.creating_pin()
+                self.account_type='SAVINGS'
+                self.intial_deposite()
+                self.account_status='ACTIVE'
+                self.time()
+                self.account_info()
+                input('=> PRESS ENTER TO STORE DATA INTO DATA-BASE : ')
     
     def account_number(self):
         account_number=random.randint(1000000000,9999999999)
         self.account_id=str(account_number)
+
+    def validate_account_id(self):
+        while True:
+            self.data=self.database_operations.fetch_single_record('accounts','account_id',self.account_id)
+            if self.data is not None:
+                self.account_number()
+            else:
+                return
     
     def intial_deposite(self):
         while True:
-            self.amount=int(input("Intial Deposite = "))
-            if str(self.amount).isdigit():
+            self.amount=input("Intial Deposite = ")
+            if self.amount.isdigit():
+                self.amount=int(self.amount)
                 if self.amount >= 1:
                     print(f"--- You deposited {self.amount} /- in your account as Intial Deposite --- ")
                     break
@@ -52,6 +56,14 @@ class CreateAccount:
 
     def customer_id_generation(self):
         self.customer_id = "C" + str(random.randint(1, 9999)).zfill(4)
+
+    def validating_customer_id(self):
+        while True:
+            self.data=self.database_operations.fetch_single_record('customers','customer_id',self.customer_id)
+            if self.data is not None:
+                self.customer_id_generation()
+            else:
+                return
     
     def DOB(self):
         while True:
@@ -67,13 +79,22 @@ class CreateAccount:
     def mobile_num(self):
         while True:
             self.phone_number=input("Enter your phone number : ")
+            self.phone_number=self.phone_number.strip()
             if self.phone_number.isdigit() and len(self.phone_number) == 10 and self.phone_number[0] in "6789":
-                break
+                self.data=self.database_operations.fetch_single_record('customers','phone_number',self.phone_number)
+                if self.data is None:
+                    break
+                else:
+                    print("!--- PHONE NUMBER ALREADY EXISTS ---!")
             else:
                 print("!----- INVALID DATA ENTERED -----!")
     
     def time(self):
         self.created_at= datetime.now()
+
+    def validate(self):
+            self.validating_customer_id()
+            self.validate_account_id()
     
     def account_info(self):
          print('*'*41)

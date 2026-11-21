@@ -1,3 +1,6 @@
 .env
 __pycache__/
 *.pyc
+test_pin.py
+test_postgres.py
+db_table_creation.py

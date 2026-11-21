@@ -28,24 +28,34 @@ def connection_check():
         print("Database connection is not available.")
         return False
     return True
+
+def for_singlerecord():
+    data = cursor.fetchone()
+
+    if data is None:
+        return None
+
+    columns = [column[0] for column in cursor.description]
+
+    return dict(zip(columns, data))
     
-def validating_customer(account):
+
+def fetch_single_record(table,column,value): #fetching a single record from the data base, this is a flexible function
     if not connection_check():
         return
     data=None
     try:
-        cursor.execute("""
-                SELECT c.customer_id, a.account_id, c.phone_number
-                FROM customers AS c
-                JOIN accounts AS a
-                ON c.customer_id = a.customer_id
-                WHERE c.customer_id = %s;""", (account.customer_id,))
-        data=cursor.fetchone()
+        cursor.execute(f"""
+                SELECT * from {table} 
+                WHERE {column} = %s;""", (value,))
+        data=for_singlerecord()
+    except pg8000.dbapi.Error as error:
+            print(f"Database operations failed, due to {error}")
     except Exception as error:
         print(f"UNEXPECTED ERROR : {error}")
     else:
         return data
-
+    
 def inserting_details_into_customers(account):
     if not connection_check():
         return
@@ -79,7 +89,7 @@ def inserting_into_accounts(account):
 
     try:
         cursor.execute("""
-        INSERT INTO ACCOUNTS (
+        INSERT INTO accounts (
         account_id,
         customer_id,
         account_type,
@@ -98,5 +108,24 @@ def inserting_into_accounts(account):
         print(f"UNEXPECTED ERROR : {error}")
     else:
         print("Customers data inserted successfully!")
-    
-    
+
+def updating_record(table,set_column,set_value,where_column,where_value):
+    if not connection_check():
+        return
+
+    try:
+        cursor.execute(f"""
+                UPDATE {table}
+                SET {set_column} = %s
+                WHERE {where_column} = %s;""", (set_value,where_value))
+        connection.commit()
+    except pg8000.dbapi.Error as error:
+        print(f"Database operations failed, due to {error}")
+        if connection is not None:
+            connection.rollback()
+    except Exception as error:
+        print(f"UNEXPECTED ERROR : {error}")
+        if connection is not None:
+            connection.rollback()
+    else:
+        print("Record updated successfully!")
